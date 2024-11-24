@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur d'image</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+        }
+        #container {
+            text-align: center;
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 350px;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 25px;
+            cursor: pointer;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            color: #333;
+            white-space: pre-wrap; /* Preserve whitespace and line breaks */
+        }
+        img {
+            margin-top: 20px;
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container">
+    <h1>Générateur d'image</h1>
+    <input type="text" id="textInput" placeholder="Écrivez votre description d'image ici..." aria-label="Image à générer">
+    <button id="goButton">Générer</button>
+    <div id="result"></div>
+    <img id="imageResult" alt="Image générée" style="display:none;">
+</div>
+
+<script>
+    let conversationHistory = ""; // Historique de la conversation
+
+    document.getElementById('goButton').addEventListener('click', async () => {
+        const prompt = document.getElementById('textInput').value;
+        if (prompt.trim() === "") {
+            alert("Veuillez entrer une suggestion d'image.");
+            return;
+        }
+
+        // Construire le prompt pour l'API
+        const formattedPrompt = `Transformez ce texte "${prompt}" en un prompt court et idéal pour générer une image à partir des infos de ce texte, n'ajoutez rien d'autres et inventez rien d'autres. Reecrivez le prompt en anglais. Et en reprenant au mieux les idées de bases avec tous les details dit`;
+        const apiUrl = `https://text.pollinations.ai/${encodeURIComponent(formattedPrompt)}?model=command-r`;
+
+        console.log(`Requête GET envoyée : ${apiUrl}`);
+
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) throw new Error('Erreur réseau');
+
+            const aiMessage = await response.text(); // Utiliser response.text() pour obtenir la réponse
+            conversationHistory += `ai: ${aiMessage}\n`; // Mettre à jour l'historique de la conversation
+            
+            // Remplacer le texte dans l'input par la réponse de l'API
+            document.getElementById('textInput').value = aiMessage || "Aucun résultat trouvé.";
+            
+            // Construire l'URL de l'image
+          const timestamp = Date.now();
+const randomValue = Math.floor(Math.random() * 1000000); // Génère un nombre aléatoire entre 0 et 999999
+const immenseSeed = (timestamp * 1000000000) + randomValue; // Multiplie le timestamp par un milliard et ajoute un nombre aléatoire
+          
+            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(aiMessage)}?model=turbo&seed=${immenseSeed}&width=1080&height=1080&nologo=true&enhance=false`;
+
+            // Afficher l'image
+            const imageElement = document.getElementById('imageResult');
+            imageElement.src = imageUrl;
+            imageElement.style.display = "block"; // Rendre l'image visible
+            
+            // Optionnel : vider le div result si vous ne l'utilisez plus
+            document.getElementById('result').innerText = ""; 
+        } catch (error) {
+            console .error('Erreur lors de la communication avec l\'API:', error);
+            document.getElementById('result').innerText = "Une erreur s'est produite. Veuillez réessayer.";
+        }
+    });
+</script>
+
+</body>
+</html>
